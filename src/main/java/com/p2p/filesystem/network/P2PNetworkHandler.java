@@ -144,7 +144,7 @@
                     byte[] bytes = new byte[buf.readableBytes()];
                     buf.readBytes(bytes);
                     P2PMessage p2pMsg = P2PMessage.deserialize(bytes);
-                    node.handleMessage(p2pMsg, ctx.channel());
+                    node.handleMessage(p2pMsg, ctx.channel(), bytes.length);
                 } catch (Exception e) {
                     logger.error("Protocol violation from {}", ctx.channel().remoteAddress(), e);
                     ctx.close();

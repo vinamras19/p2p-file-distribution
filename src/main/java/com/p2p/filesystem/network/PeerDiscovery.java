@@ -81,7 +81,14 @@ public class PeerDiscovery {
 
         String type = parts[0];
         String peerId = parts[1];
-        int peerTcpPort = Integer.parseInt(parts[3]);
+
+        int peerTcpPort;
+        try {
+            peerTcpPort = Integer.parseInt(parts[3]);
+        } catch (NumberFormatException e) {
+            logger.warn("Malformed discovery packet, invalid port: {}", parts[3]);
+            return;
+        }
 
         if (peerId.equals(node.getNodeId())) return;
 
