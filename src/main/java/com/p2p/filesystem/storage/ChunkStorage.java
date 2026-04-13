@@ -132,7 +132,7 @@ public class ChunkStorage {
 
     private Path getPath(String chunkKey) {
         String hash = Integer.toHexString(chunkKey.hashCode());
-        String subdir = String.format("%02x", Math.abs(hash.hashCode()) % 256);
+        String subdir = String.format("%02x", (hash.hashCode() & 0xFF));
         return rootDir.resolve(subdir).resolve(chunkKey + ".chunk");
     }
 
