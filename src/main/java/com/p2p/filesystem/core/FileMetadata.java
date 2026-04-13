@@ -12,7 +12,7 @@ public class FileMetadata
     private final int chunkSize;
     private final List<String> chunkHashes;
 
-    private String merkleRoot;
+    private String rootHash;
 
     public FileMetadata(String fileId, String fileName, long fileSize, int chunkSize, List<String> chunkHashes) {
         this.fileId = fileId;
@@ -31,8 +31,8 @@ public class FileMetadata
     public long getFileSize() { return fileSize; }
     public int getChunkSize() { return chunkSize; }
     public List<String> getChunkHashes() { return Collections.unmodifiableList(chunkHashes); }
-    public String getMerkleRoot() { return merkleRoot; }
-    public void setMerkleRoot(String merkleRoot) { this.merkleRoot = merkleRoot; }
+    public String getRootHash() { return rootHash; }
+    public void setRootHash(String rootHash) { this.rootHash = rootHash; }
 
     @Override
     public String toString() {

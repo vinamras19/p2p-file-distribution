@@ -24,10 +24,10 @@ public class FileIntegrityVerifier {
                 return false;
             }
 
-            String expectedHash = calculateMerkleRoot(metadata.getChunkHashes());
+            String expectedHash = calculateRootHash(metadata.getChunkHashes());
 
-            if (metadata.getMerkleRoot() != null && !expectedHash.equals(metadata.getMerkleRoot())) {
-                logger.warn("Merkle root mismatch for {}", path);
+            if (metadata.getRootHash() != null && !expectedHash.equals(metadata.getRootHash())) {
+                logger.warn("Root hash mismatch for {}", path);
                 return false;
             }
 
@@ -44,7 +44,7 @@ public class FileIntegrityVerifier {
         }
     }
 
-    public String calculateMerkleRoot(List<String> chunkHashes) {
+    public String calculateRootHash(List<String> chunkHashes) {
         if (chunkHashes == null || chunkHashes.isEmpty()) return "";
 
         try {
