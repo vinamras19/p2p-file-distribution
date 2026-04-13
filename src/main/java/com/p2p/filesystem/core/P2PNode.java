@@ -70,16 +70,16 @@ public class P2PNode {
     }
 
     public String addFile(Path path) throws IOException {
-        FileChunker chunker = new FileChunker(config.getChunkSize());
-        List<FileChunk> chunks = chunker.chunkFile(path.getFileName().toString(), path);
-
         String fileId = UUID.randomUUID().toString();
+        FileChunker chunker = new FileChunker(config.getChunkSize());
+        List<FileChunk> chunks = chunker.chunkFile(fileId, path);
+
         List<String> hashes = chunks.stream().map(FileChunk::getSha1Hash).collect(Collectors.toList());
-        FileMetadata meta = new FileMetadata(fileId, path.getFileName().toString(), java.nio.file.Files.size(path), config.getChunkSize(), hashes);
+        FileMetadata meta = new FileMetadata(fileId, path.getFileName().toString(),
+                java.nio.file.Files.size(path), config.getChunkSize(), hashes);
 
         for (FileChunk chunk : chunks) {
-            FileChunk secureChunk = new FileChunk(fileId, chunk.getChunkIndex(), chunk.getData());
-            chunkStorage.storeChunk(secureChunk);
+            chunkStorage.storeChunk(chunk);
         }
         knownFiles.put(fileId, meta);
         return fileId;
