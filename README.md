@@ -19,15 +19,9 @@ The architecture consists of independent nodes that utilize UDP multicast for lo
 
 ```mermaid
 graph TD
-    %% Styling to be minimalist
-    classDef plain fill:#fff,stroke:#333,stroke-width:1px;
-    classDef db fill:#f9f9f9,stroke:#333,stroke-width:1px;
-    
-    %% User Entry Point
     User((User)) -->|Commands| CLI[P2P CLI]
     CLI --> Node[P2P Node Core]
     
-    %% Core Logic
     subgraph " "
         direction TB
         Node -->|Manage| Net[Network Handler]
@@ -35,16 +29,11 @@ graph TD
         Node -->|Manage| DL[Download Manager]
     end
     
-    %% External/IO Layers
     Net -->|UDP Multicast| Disc[Peer Discovery]
     Net -->|TCP / Binary| Peers[Swarm Peers]
     
     Store -->|Metadata Index| Redis[(Redis)]
     Store -->|Binary Blobs| Disk[File System]
-    
-    %% Apply Styles
-    class CLI,Node,Net,Store,DL,Disc,Peers,Disk plain;
-    class Redis db;
 ```
 
 ## Getting Started
