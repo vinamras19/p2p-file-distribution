@@ -7,11 +7,11 @@ A decentralized, high-throughput file distribution node engineered in Java. This
 ## Key Features
 
 * **Custom Binary Protocol:** Designed a lightweight wire protocol (`[Type(1)][SenderLen(2)][Sender][Payload]`) with Netty length-field framing for transport. This minimizes packet overhead and maximizes throughput.
-* **Non-Blocking Network Layer:** Leveraged Netty (NIO) to implement a Reactor pattern via EventLoops. This architecture enables the node to maintain thousands of concurrent peer connections and handle asynchronous chunk requests without the memory overhead of a traditional thread-per-connection model.
-* **Hybrid Storage Engine:** Implemented a two-tier storage system using **Redis** for O(1) metadata lookups and local disk for blob persistence. **Bloom Filters** are utilized to instantly check chunk availability, eliminating unnecessary disk I/O.
+* **Non-Blocking Network Layer:** Leveraged Netty (NIO) to implement a Reactor pattern via EventLoops. This architecture enables the node to maintain concurrent peer connections and handle asynchronous chunk requests without the memory overhead of a traditional thread-per-connection model.
+* **Two-Tier Storage:** Implemented a two-tier storage system using **Redis** for O(1) metadata lookups and local disk for blob persistence. **Bloom Filters** are utilized to instantly check chunk availability, eliminating unnecessary disk I/O.
 * **Adaptive Load Balancing:** Implemented a cost-based peer scoring algorithm using weighted real-time latency, error rates, and saturation metrics, with a circuit breaker to exclude unhealthy peers.
 * **Transport Security:**  Secured peer connections with **TLS 1.3** encryption via Netty's SSL pipeline.
-* **Traffic Shaping:** Integrated a semaphore-based **backpressure** controller to reject excess requests during saturation, preventing `OutOfMemoryErrors` under burst loads.
+* **Traffic Shaping:** Integrated a semaphore-based **backpressure** controller to reject excess requests under concurrent load.
 
 ## System Architecture
 
@@ -93,7 +93,7 @@ Downloading...
 Download complete!
 ```
 
-*Test with large datasets. The system utilizes O(1) metadata lookups to orchestrate a parallelized swarm download, dynamically reconstructing the binary stream from distributed peers.*
+*Test with large files. The system downloads chunks from available peers in parallel and reconstructs the original file locally.*
 
 ## Observability
 ```text
