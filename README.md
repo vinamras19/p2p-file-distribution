@@ -116,7 +116,11 @@ discovery.enabled: Toggle for UDP multicast presence.
 ## Benchmarks
 
 ```text
-mvn compile exec:java -Dexec.mainClass=com.p2p.filesystem.benchmark.LoadTestHarness 
+# Set mainClass in pom.xml to com.p2p.filesystem.benchmark.LoadTestHarness, then:
+mvn compile exec:java
 ```
 
-Sustains 33 MB/s end-to-end transfer throughput on localhost with TLS 1.3, verified with SHA-1 integrity checks. See `LoadTestHarness.java` for full results.
+Sustains ~34 MB/s end-to-end transfer throughput on localhost with TLS 1.3, verified with SHA-1 integrity checks. See `LoadTestHarness.java` for full results.
+
+## License
+See `LICENSE` for more information.
