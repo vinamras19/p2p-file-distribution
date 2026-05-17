@@ -7,7 +7,7 @@ A decentralized, high-throughput file distribution node built in Java. This syst
 ## Key Features
 
 * **Custom Binary Protocol:** Designed a lightweight wire protocol (`[Type(1)][SenderLen(2)][Sender][Payload]`) with Netty length-field framing for transport.
-* **Non-Blocking Network Layer:** Leveraged Netty (NIO) to implement a Reactor pattern via EventLoops. This architecture enables the node to maintain concurrent peer connections and handle asynchronous chunk requests without the memory overhead of a traditional thread-per-connection model.
+* **Non-Blocking Network Layer:** Used Netty (NIO) to implement a Reactor pattern via EventLoops. This architecture enables the node to maintain concurrent peer connections and handle asynchronous chunk requests without the memory overhead of a traditional thread-per-connection model.
 * **Two-Tier Storage:** Implemented a two-tier storage system using **Redis** for O(1) metadata lookups and local disk for blob persistence. **Bloom Filters** check chunk availability, eliminating unnecessary disk I/O.
 * **Adaptive Load Balancing:** Implemented a cost-based peer scoring algorithm using weighted real-time latency, error rates, and saturation metrics, with a circuit breaker to exclude unhealthy peers.
 * **Transport Security:**  Secured peer connections with **TLS 1.3** encryption via Netty's SSL pipeline.
@@ -15,7 +15,7 @@ A decentralized, high-throughput file distribution node built in Java. This syst
 
 ## System Architecture
 
-The architecture consists of independent nodes that utilize UDP multicast for local discovery and persistent TCP connections for data exchange.
+The architecture consists of independent nodes that use UDP multicast for local discovery and persistent TCP connections for data exchange.
 
 ```mermaid
 graph TD
