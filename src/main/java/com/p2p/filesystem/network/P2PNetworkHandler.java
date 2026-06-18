@@ -18,6 +18,7 @@
     import org.slf4j.LoggerFactory;
 
     import java.util.Map;
+    import java.util.ArrayList;
     import java.util.concurrent.*;
 
     public class P2PNetworkHandler {
@@ -76,6 +77,7 @@
                     Channel ch = f.channel();
                     connections.put(key, ch);
                     sendHandshake(ch);
+                    sendAnnounce(ch);
                     future.complete(ch);
                 } else {
                     future.completeExceptionally(f.cause());
@@ -97,6 +99,10 @@
 
         private void sendHandshake(Channel ch) {
             sendMessage(ch, new HandshakeMessage(node.getNodeId(), "1.0", "JavaP2P"));
+        }
+
+        private void sendAnnounce(Channel ch) {
+            sendMessage(ch, new FileAnnounceMessage(node.getNodeId(), new ArrayList<>(node.getKnownFiles().keySet())));
         }
 
         public void shutdown() {
