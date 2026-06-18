@@ -4,7 +4,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 public abstract class P2PMessage {
-    public enum Type { HANDSHAKE, HEARTBEAT, CHUNK_REQUEST, CHUNK_RESPONSE, PEER_DISCOVERY }
+    public enum Type { HANDSHAKE, HEARTBEAT, CHUNK_REQUEST, CHUNK_RESPONSE, PEER_DISCOVERY, FILE_ANNOUNCE }
 
     protected final Type type;
     protected final String senderId;
@@ -45,6 +45,7 @@ public abstract class P2PMessage {
                 case HEARTBEAT: return new HeartbeatMessage(senderId);
                 case CHUNK_REQUEST: return new ChunkRequestMessage(senderId, dis);
                 case CHUNK_RESPONSE: return new ChunkResponseMessage(senderId, dis);
+                case FILE_ANNOUNCE: return new FileAnnounceMessage(senderId, dis);
                 default: throw new IOException("Handler not implemented for: " + type);
             }
         } catch (IOException e) {
