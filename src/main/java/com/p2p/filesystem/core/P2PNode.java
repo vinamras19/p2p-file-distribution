@@ -82,6 +82,7 @@ public class P2PNode {
             chunkStorage.storeChunk(chunk);
         }
         knownFiles.put(fileId, meta);
+        networkHandler.broadcast(new FileAnnounceMessage(nodeId, List.of(fileId)));
         return fileId;
     }
 
