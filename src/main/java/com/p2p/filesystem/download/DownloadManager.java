@@ -123,14 +123,24 @@ public class DownloadManager {
         DownloadTask task = activeDownloads.get(chunk.getFileId());
         if (task == null) return;
 
+        int index = chunk.getChunkIndex();
+        CompletableFuture<Boolean> f = task.pendingRequests.remove(index);
+
+        String expected = index < task.meta.getChunkHashes().size()
+                ? task.meta.getChunkHashes().get(index)
+                : null;
+        if (expected == null || !expected.equals(chunk.getSha1Hash())) {
+            logger.warn("SHA-1 mismatch on chunk {} of {}; rejecting", index, chunk.getFileId());
+            if (f != null) f.complete(false);
+            return;
+        }
+
         try {
-            writeChunkToFile(task.outputPath, chunk.getChunkIndex(), chunk.getData());
-
-            CompletableFuture<Boolean> f = task.pendingRequests.remove(chunk.getChunkIndex());
+            writeChunkToFile(task.outputPath, index, chunk.getData());
             if (f != null) f.complete(true);
-
         } catch (IOException e) {
-            logger.error("Write error for chunk {}", chunk.getChunkIndex(), e);
+            logger.error("Write error for chunk {}", index, e);
+            if (f != null) f.complete(false);
         }
     }
 
