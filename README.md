@@ -9,29 +9,30 @@ A decentralized, high-throughput file distribution node built in Java. This syst
 * **Custom Binary Protocol:** Designed a lightweight wire protocol (`[Type(1)][SenderLen(2)][Sender][Payload]`) with Netty length-field framing for transport.
 * **Non-Blocking Network Layer:** Used Netty (NIO) to implement a Reactor pattern via EventLoops. This architecture enables the node to maintain concurrent peer connections and handle asynchronous chunk requests without the memory overhead of a traditional thread-per-connection model.
 * **Two-Tier Storage:** Implemented a two-tier storage system using **Redis** for O(1) metadata lookups and local disk for blob persistence. **Bloom Filters** check chunk availability, eliminating unnecessary disk I/O.
-* **Adaptive Load Balancing:** Implemented a cost-based peer scoring algorithm using weighted real-time latency, error rates, and saturation metrics, with a circuit breaker to exclude unhealthy peers.
-* **Transport Security:**  Secured peer connections with **TLS 1.3** encryption via Netty's SSL pipeline.
+* **Adaptive Load Balancing:** Chunk requests are routed per-chunk through a cost-based peer scorer (weighted latency, in-flight load, and error rate), fed by live request/response stats from the download path. A circuit breaker excludes peers after repeated failures and readmits them once they recover.
+* **Transport Security:** Secured peer connections with **TLS 1.3** encryption via Netty's SSL pipeline.
 * **Traffic Shaping:** Integrated a semaphore-based **backpressure** controller to reject excess requests under concurrent load.
 
 ## System Architecture
 
-The architecture consists of independent nodes that use UDP multicast for local discovery and persistent TCP connections for data exchange.
+The architecture consists of independent nodes that use UDP multicast for local discovery and persistent TCP connections for data exchange. Chunk requests are routed per-chunk through a load balancer, and peers advertise the files they hold.
 
 ```mermaid
 graph TD
     User((User)) -->|Commands| CLI[P2P CLI]
     CLI --> Node[P2P Node Core]
-    
     subgraph " "
         direction TB
         Node -->|Manage| Net[Network Handler]
         Node -->|Manage| Store[Chunk Storage]
         Node -->|Manage| DL[Download Manager]
+        Node -->|Manage| LB[Load Balancer]
     end
-    
+    DL -->|Score & Select Peer| LB
+    DL -->|Chunk Requests| Net
     Net -->|UDP Multicast| Disc[Peer Discovery]
     Net -->|TCP / Binary| Peers[Swarm Peers]
-    
+    Peers -.->|File Announce| Net
     Store -->|Metadata Index| Redis[(Redis)]
     Store -->|Binary Blobs| Disk[File System]
 ```
@@ -96,16 +97,18 @@ Download complete!
 *Test with large files. The system downloads chunks from available peers in parallel and reconstructs the original file locally.*
 
 ## Observability
-```text
+
 The node exposes internal metrics for monitoring:
+```text
 Metrics Endpoint: GET /metrics (Prometheus compatible)
 
 Health Check: GET /api/health
 
-Real-time Stats: GET /api/stats
+Stats (peer count, files shared, download throughput): GET /api/stats
 ```
 ## Configuration
-Key performance tunables are configurable via `P2PConfiguration`. If file exists at `src/main/resources/application.properties`, it will be loaded automatically:
+
+Key performance tunables are configurable via `P2PConfiguration`. If a file exists at `src/main/resources/application.properties`, it will be loaded automatically:
 ```text
 node.port: TCP port for data transfer.
 
@@ -120,7 +123,7 @@ discovery.enabled: Toggle for UDP multicast presence.
 mvn compile exec:java
 ```
 
-Sustains ~34 MB/s end-to-end transfer throughput on localhost with TLS 1.3, verified with SHA-1 integrity checks. See `LoadTestHarness.java` for full results.
+~34 MB/s end-to-end transfer on localhost with TLS 1.3 in the included load test. Each received chunk is verified against its SHA-1 hash from the file metadata before it is written; mismatches are rejected and re-requested. See `LoadTestHarness.java`.
 
 ## License
 See `LICENSE` for more information.
