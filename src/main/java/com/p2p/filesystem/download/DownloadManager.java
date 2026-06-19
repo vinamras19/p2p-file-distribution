@@ -1,6 +1,5 @@
 package com.p2p.filesystem.download;
 
-import com.p2p.filesystem.config.P2PConfiguration;
 import com.p2p.filesystem.core.FileChunk;
 import com.p2p.filesystem.core.FileMetadata;
 import com.p2p.filesystem.core.P2PNode;
@@ -62,15 +61,19 @@ public class DownloadManager {
                     continue;
                 }
 
-                Iterator<PeerInfo> peerIterator = peers.iterator();
                 List<Integer> batch = new ArrayList<>(missingChunks);
 
                 for (Integer chunkIdx : batch) {
-                    if (!peerIterator.hasNext()) peerIterator = peers.iterator();
-                    PeerInfo peer = peerIterator.next();
+                    PeerInfo peer = node.selectPeer(peers);
+                    if (peer == null) break;
+
+                    long start = System.nanoTime();
+                    node.recordPeerRequest(peer.getPeerId());
 
                     futures.add(requestChunk(peer, task, chunkIdx)
                             .thenAccept(success -> {
+                                long latencyMs = (System.nanoTime() - start) / 1_000_000;
+                                node.recordPeerResponse(peer.getPeerId(), latencyMs, success);
                                 if (success) missingChunks.remove(chunkIdx);
                             }));
                 }

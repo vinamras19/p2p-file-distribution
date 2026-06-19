@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class P2PNode {
     private static final Logger logger = LoggerFactory.getLogger(P2PNode.class);
@@ -28,6 +29,7 @@ public class P2PNode {
     protected final Map<String, PeerInfo> peers = new ConcurrentHashMap<>();
     protected final Map<String, FileMetadata> knownFiles = new ConcurrentHashMap<>();
     protected final SecureChannelHandler secureChannel;
+    protected final AtomicLong rrCounter = new AtomicLong(0);
 
     private volatile boolean isRunning = false;
 
@@ -96,10 +98,20 @@ public class P2PNode {
     }
 
     public void handleMessage(P2PMessage msg, Channel channel, int rawBytes) {
-        if (msg.getType() == P2PMessage.Type.CHUNK_REQUEST) {
+        if (msg.getType() == P2PMessage.Type.HANDSHAKE) {
+            networkHandler.sendMessage(channel, new FileAnnounceMessage(nodeId, new ArrayList<>(knownFiles.keySet())));
+        } else if (msg.getType() == P2PMessage.Type.CHUNK_REQUEST) {
             handleChunkRequest((ChunkRequestMessage) msg, channel);
         } else if (msg.getType() == P2PMessage.Type.CHUNK_RESPONSE) {
             downloadManager.handleChunkReceived(((ChunkResponseMessage) msg).getChunk());
+        } else if (msg.getType() == P2PMessage.Type.FILE_ANNOUNCE) {
+            FileAnnounceMessage announce = (FileAnnounceMessage) msg;
+            PeerInfo peer = peers.get(announce.getSenderId());
+            if (peer != null) {
+                for (String fileId : announce.getFileIds()) {
+                    peer.addAvailableFile(fileId);
+                }
+            }
         }
     }
 
@@ -123,9 +135,28 @@ public class P2PNode {
     }
 
     public List<PeerInfo> getPeersWithFile(String fileId) {
-        // TODO: Filter by peers that actually have this file
-        // Currently returns all peers for swarm download
-        return new ArrayList<>(peers.values());
+        List<PeerInfo> known = peers.values().stream()
+                .filter(p -> p.hasFile(fileId))
+                .collect(Collectors.toList());
+        if (known.isEmpty()) {
+            return new ArrayList<>(peers.values());
+        }
+        return known;
+    }
+
+    public PeerInfo selectPeer(List<PeerInfo> peers) {
+        if (peers == null || peers.isEmpty()) return null;
+        int idx = (int) (rrCounter.getAndIncrement() % peers.size());
+        return peers.get(Math.abs(idx));
+    }
+
+    public void recordUpload(long bytes) {
+    }
+
+    public void recordPeerRequest(String peerId) {
+    }
+
+    public void recordPeerResponse(String peerId, long latencyMs, boolean success) {
     }
 
     public String getNodeId() { return nodeId; }

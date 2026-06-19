@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -44,16 +44,29 @@ public class EnhancedP2PNode extends P2PNode {
             logger.warn("Node saturated, rejecting download request for {}", fileId);
             return CompletableFuture.completedFuture(false);
         }
-        // TODO: Pass selected peer to Download Manager to replace round-robin chunk distribution
-        var bestPeer = loadBalancer.selectPeer(Collections.list(Collections.enumeration(getPeers().values())));
-
-        if (bestPeer != null)
-        {
-            logger.debug("LoadBalancer selected peer {} for download", bestPeer.getPeerId());
-        }
 
         return super.downloadFile(fileId, outputPath)
                 .whenComplete((result, ex) -> backpressure.release());
+    }
+
+    @Override
+    public PeerInfo selectPeer(List<PeerInfo> peers) {
+        return loadBalancer.selectPeer(peers);
+    }
+
+    @Override
+    public void recordPeerRequest(String peerId) {
+        loadBalancer.recordRequest(peerId);
+    }
+
+    @Override
+    public void recordPeerResponse(String peerId, long latencyMs, boolean success) {
+        loadBalancer.recordResponse(peerId, latencyMs, success);
+    }
+
+    @Override
+    public void recordUpload(long bytes) {
+        monitor.recordBytes(bytes, false);
     }
 
     @Override
