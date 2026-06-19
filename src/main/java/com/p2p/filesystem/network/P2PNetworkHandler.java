@@ -97,6 +97,10 @@
             connections.values().forEach(ch -> sendMessage(ch, msg));
         }
 
+        public int getConnectionCount() {
+            return connections.size();
+        }
+
         private void sendHandshake(Channel ch) {
             sendMessage(ch, new HandshakeMessage(node.getNodeId(), "1.0", "JavaP2P"));
         }

@@ -120,6 +120,7 @@ public class P2PNode {
             FileChunk chunk = chunkStorage.retrieveChunk(msg.getFileId(), msg.getChunkIndex());
             if (chunk != null) {
                 networkHandler.sendMessage(channel, new ChunkResponseMessage(nodeId, chunk));
+                recordUpload(chunk.getSize());
             } else {
                 networkHandler.sendMessage(channel, new ChunkResponseMessage(nodeId, msg.getFileId(), msg.getChunkIndex(), "Not Found"));
             }

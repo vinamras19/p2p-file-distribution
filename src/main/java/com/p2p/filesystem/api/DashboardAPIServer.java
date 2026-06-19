@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -27,7 +26,6 @@ public class DashboardAPIServer {
 
     private final AtomicLong totalRequests = new AtomicLong(0);
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private String dashboardPath = "dashboard";
 
     public DashboardAPIServer(int port, EnhancedP2PNode node) {
         this.port = port;
@@ -39,7 +37,6 @@ public class DashboardAPIServer {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.setExecutor(Executors.newFixedThreadPool(10));
 
-        server.createContext("/", this::handleStatic);
         server.createContext("/api/stats", ex -> sendJson(ex, getStatsJson()));
         server.createContext("/api/peers", ex -> sendJson(ex, toJson(
                 node.getPeers().values().stream()
@@ -58,17 +55,6 @@ public class DashboardAPIServer {
 
         server.start();
         logger.info("Dashboard API active on port {}", port);
-    }
-
-    private void handleStatic(HttpExchange ex) throws IOException {
-        String path = ex.getRequestURI().getPath();
-        Path file = Paths.get(dashboardPath, path.equals("/") ? "index.html" : path);
-        if (Files.exists(file)) {
-            String mime = path.endsWith(".css") ? "text/css" : path.endsWith(".js") ? "application/javascript" : "text/html";
-            send(ex, 200, new String(Files.readAllBytes(file)), mime);
-        } else {
-            send(ex, 404, "404 Not Found", "text/plain");
-        }
     }
 
     private void handleHealth(HttpExchange ex) throws IOException {
@@ -91,7 +77,8 @@ public class DashboardAPIServer {
         StringBuilder sb = new StringBuilder();
         appendMetric(sb, "p2p_peers_total", "gauge", node.getPeers().size());
         appendMetric(sb, "p2p_files_shared", "gauge", node.getKnownFiles().size());
-        appendMetric(sb, "p2p_bytes_transferred", "counter", stats.activeConnections);
+        appendMetric(sb, "p2p_active_connections", "gauge", node.getNetworkHandler().getConnectionCount());
+        appendMetric(sb, "p2p_bytes_transferred", "counter", stats.totalBytes);
         appendMetric(sb, "p2p_download_speed_bytes", "gauge", stats.downloadSpeed);
         appendMetric(sb, "p2p_upload_speed_bytes", "gauge", stats.uploadSpeed);
         appendMetric(sb, "p2p_jvm_memory_used", "gauge", Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
@@ -120,7 +107,8 @@ public class DashboardAPIServer {
         return toJson(map(
                 "totalPeers", node.getPeers().size(),
                 "filesShared", node.getKnownFiles().size(),
-                "bytesTransferred", stats.activeConnections,
+                "activeConnections", node.getNetworkHandler().getConnectionCount(),
+                "bytesTransferred", stats.totalBytes,
                 "downloadSpeed", stats.downloadSpeed,
                 "uploadSpeed", stats.uploadSpeed
         ));

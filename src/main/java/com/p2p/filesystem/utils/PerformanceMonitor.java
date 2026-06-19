@@ -37,6 +37,7 @@ public class PerformanceMonitor {
         return new StatsSnapshot(
                 rx / uptime,
                 tx / uptime,
+                rx + tx,
                 getCount("conn_success"),
                 getCount("conn_fail"),
                 uptime
@@ -63,13 +64,15 @@ public class PerformanceMonitor {
     public static class StatsSnapshot {
         public final long downloadSpeed;
         public final long uploadSpeed;
+        public final long totalBytes;
         public final long activeConnections;
         public final long failedConnections;
         public final long uptimeSeconds;
 
-        public StatsSnapshot(long dl, long ul, long connOk, long connFail, long uptime) {
+        public StatsSnapshot(long dl, long ul, long total, long connOk, long connFail, long uptime) {
             this.downloadSpeed = dl;
             this.uploadSpeed = ul;
+            this.totalBytes = total;
             this.activeConnections = connOk;
             this.failedConnections = connFail;
             this.uptimeSeconds = uptime;
